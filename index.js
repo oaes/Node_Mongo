@@ -33,7 +33,7 @@ app.get('/products', (req, res) => {
     client = new MongoClient(uri, { useNewUrlParser: true },{useUnifiedTopology: true}) 
     client.connect(err => {  
     const collection = client.db("onlineStore").collection("products")
-    collection.find().limit(10).toArray((err, documents) => {
+    collection.find().toArray((err, documents) => {
         if(err){
             console.log(err);
             res.status(500).send({message:err});
@@ -45,15 +45,30 @@ app.get('/products', (req, res) => {
     });
     client.close();
     });
-})
-
-
+});
 
 const name = ['akash','oaes','mila','susmita','tepi','tala','turjo']
-app.get('/user/:id', (req, res) => {
-    const usersId = req.params.id;
-    const userName = name[usersId];
-    res.send({usersId, userName})
+
+app.post('/getProductsBykey', (req, res) => {
+    const key = req.params.key;
+    const productKeys = req.body;
+    console.log(productKeys)
+    client = new MongoClient(uri, { useNewUrlParser: true },{useUnifiedTopology: true}) 
+    client.connect(err => {  
+    const collection = client.db("onlineStore").collection("products")
+    collection.find({key:{$in: productKeys}}).toArray((err, documents) => {
+        if(err){
+            console.log(err);
+            res.status(500).send({message:err});
+        }
+        else
+        {
+            res.send(documents);
+        }
+    });
+    client.close();
+    });
+
 })
 
 
@@ -67,7 +82,7 @@ app.post('/addProduct', (req, res) => {
         client = new MongoClient(uri, { useNewUrlParser: true },{useUnifiedTopology: true});
         client.connect(err => {
         const collection = client.db("onlineStore").collection("products");
-        collection.insertOne(products, (err, result) => {
+        collection.insert(products, (err, result) => {
             if(err){
                 console.log(err);
                 res.status(500).send({message:err});
@@ -79,8 +94,29 @@ app.post('/addProduct', (req, res) => {
         });
         client.close();
         });
+});
 
-})
+//payment
 
+app.post('/placeOrder', (req, res) => {
+        const orderDetails = req.body;
+        orderDetails.orderTime = new Date();
+        console.log(orderDetails);
+        client = new MongoClient(uri, { useNewUrlParser: true },{useUnifiedTopology: true});
+        client.connect(err => {
+        const collection = client.db("onlineStore").collection("orders");
+        collection.insertOne(orderDetails, (err, result) => {
+            if(err){
+                console.log(err);
+                res.status(500).send({message:err});
+            }
+            else
+            {
+                res.send(result.ops[0]);
+            }
+        });
+        client.close();
+        });
+});      
 
-app.listen(3000, () => console.log('listing a music on port 3000'))
+app.listen(3200, () => console.log('listing a music on port 3200'));
